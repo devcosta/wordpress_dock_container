@@ -1,0 +1,60 @@
+version: '3.9'
+
+services:
+  db:
+    image: mysql:5.7
+    labels:
+      - "com.cdx.description=Setup Mysql"
+    volumes:
+      - db_data:/var/lib/mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: cdx_wp
+      MYSQL_DATABASE: wordpress
+      MYSQL_USER: wordpress
+      MYSQL_PASSWORD: codex2000@
+    volumes:
+    - type: volume
+      source: db
+      target: /var/lib/mysql
+    - type: bind
+      source: ./docker-fixes.cnf
+      target: /etc/mysql/conf.d/docker-fixes.cnf
+
+  wordpress:
+    depends_on:
+      - db
+    image: wordpress:latest
+    labels:
+      - "com.codexbrazil.description=Setup wordpress"
+    ports:
+      - "8000:80"
+    restart: always
+    environment:
+      WORDPRESS_DB_HOST: db:3306
+      WORDPRESS_DB_USER: wordpress
+      WORDPRESS_DB_PASSWORD: codex2000@
+      WORDPRESS_CONFIG_EXTRA: |
+        # Require SSL for admin and logins
+        define( 'FORCE_SSL_ADMIN', false );
+        # Disable plugin and theme update and installation
+        define( 'DISALLOW_FILE_MODS', false );
+        # Disable the plugin and theme editor
+        define( 'DISALLOW_FILE_EDIT', false );
+    volumes:
+      - type: volume
+        source: wordpress
+        target: /var/www/html
+      - type: bind
+        source: ./docker-uploads.ini
+        target: /usr/local/etc/php/conf.d/docker-uploads.ini
+      - type: bind
+        source: ./docker-servername.conf
+        target: /etc/apache2/conf-enabled/docker-servername.conf
+volumes:
+  wordpress:
+    labels:
+      - "com.codexbrazil.description=WordPress install"
+  db:
+    labels:
+      - "com.codexbrazil.description=MySQL datastore"
